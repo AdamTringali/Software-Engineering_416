@@ -1,0 +1,124 @@
+.cardpadding{
+    padding: 20px;
+    max-width: 1500px;
+    margin: auto;
+}
+.login-card{
+    top: 25%
+}
+.profilect{
+    float: "left";
+    padding-left: 70px;
+}
+
+.reset-page{
+    text-align: center;
+}
+
+.label{
+    margin-bottom: -1px;
+}
+
+.firstLabelCollegeInfo{
+    padding-right: 50px;
+}
+
+.collegeInfoItem{
+    /* height: 45px; */
+    width: 85%;
+    /* border-bottom: groove; */
+}
+
+.majorsList{
+    overflow-x: hidden;
+    overflow-y: scroll;
+    height: 450px;
+}
+
+.profileItem{
+    margin-bottom: .5rem;
+}
+
+/* .loading_modal{
+    background:transparent;
+     border:none;
+} */
+/* .modal-content {
+    background: rgba(0,0,0,.0001) !important;
+} */
+
+.rightLabel{
+    float: right;
+}
+
+.slides{
+
+   /*  max-height: 500px; */
+    max-width: 850px;
+    left: 50vh
+}
+
+.carousel-control-next,
+.carousel-control-prev {
+    filter: invert(100%);
+}
+.btn-group{
+    z-index: 0;
+    position: relative;
+    display: inline-flex;
+    vertical-align: middle;
+}
+
+.navbar__link {
+  cursor: pointer;
+  text-decoration: none;
+  text-indent: .3em;
+  border-bottom: 3px solid transparent;
+}
+
+.navbar__link:hover {
+  transform: translateY(-2px);
+}
+
+.spinnerpadding{
+    margin: auto;
+    padding: 25px;
+    text-align: center;
+}
+
+.vertical_line {
+    width:425px;
+    height:200px;
+	  background: linear-gradient(to right, 
+	                              transparent 0%, 
+	                              transparent calc(50% - 0.81px), 
+	                              black calc(50% - 0.8px), 
+	                              black calc(50% + 0.8px), 
+	                              transparent calc(50% + 0.81px), 
+	                              transparent 100%); 
+	}
+
+
+.horoz_line {
+    width:425px;
+    height:200px;
+        background: linear-gradient(to top, 
+                                    transparent 0%, 
+                                    transparent calc(50% - 0.81px), 
+                                    black calc(50% - 0.8px), 
+                                    black calc(50% + 0.8px), 
+                                    transparent calc(50% + 0.81px), 
+                                    transparent 100%); 
+    }
+
+ /*    .chartjs-render-monitor{
+        width:500px !important;
+        height:300px !important;
+    } */
+
+    .chart-container {
+        position: relative;
+        margin: auto;
+        height: 40vh;
+        width: 80vw;
+      }

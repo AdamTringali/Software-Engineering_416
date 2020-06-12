@@ -1,0 +1,114 @@
+Project: Colleges for Me (c4me)
+CSE 416-02: Software Engineering, Spring 2019
+Professor Scott D. Stoller
+version: 2020-03-13
+Comments
+These requirements are relatively detailed, because fair, accurate, and consistent grading is difficult if different teams implement significantly different functionality.  There is still significant flexibility in UI design, algorithm design (how the available information is used to identify similar high schools, compute college recommendation scores, and detect questionable acceptance decisions), and choice of technologies (all web frameworks, programming languages, etc., are acceptable).
+
+If your team would like to replace any of the recommended data sources with other sources of similar or additional information, send me a proposal, and I will let you know whether it is acceptable.
+
+1. Overview
+c4me helps students decide where to apply for college.  Its functionality is similar to several successful commercial software systems such as Naviance (licensed by many high schools) and commercial websites such as CollegeData.com (a service provided by 1st Financial Bank).  c4me is for students planning to get a Bachelor's degree.  An interesting challenge, beyond the scope of this project, is to make a flexible system that can easily be specialized to be suitable for students looking for different kinds of schools and degrees: undergraduate school, graduate school, law school, medical school, etc.
+
+2. Data Sources: Colleges
+To keep the dataset size manageable, the system stores data only for colleges listed in the configuration file colleges.txt, available on Blackboard.  Some data sources might use variants of some colleges' names; the system must deal with this.
+
+College Scorecard data files. https://collegescorecard.ed.gov/data/. Download and use the most recent institution-level data.  From the DOCUMENTATION tab, download the Data Dictionary (brief description of the meaning of each field) and the Technical Documentation for Institution-Level Data Files (detailed description of the meaning of each field).
+
+CollegeData.com. https://www.CollegeData.com/. The URL for the overview page for a college can be constructed automatically from the college's name.  For example, the overview page for SBU is https://www.CollegeData.com/college/Stony-Brook-University/.
+
+WSJ/THE College Rankings. The complete Wall Street Journal/Times Higher Education (WSJ/THE) 2020 College Ranking is available at https://www.timeshighereducation.com/rankings/united-states/2020#!/page/0/length/-1/sort_by/rank/sort_order/asc/cols/stats. I recommend this ranking mainly because it is easy to scrape, transparent (details of the methodology are public), and covers many colleges.  I don't endorse its methodology over others.
+
+A college is known to the system if it appears in colleges.txt. Whenever a user needs to specify a college, the user provides a substring (not necessarily a prefix or suffix) of the name. If the substring does not uniquely identify a college among those known to the system, the system displays all matches and allows the user to disambiguate. [2020-01-31: added this paragraph.]
+
+3. Data Sources: Standardized Tests
+Convert standardized test scores to percentiles. These are merely the first resources I found; if you find better ones, let me know.
+https://collegereadiness.collegeboard.org/pdf/understanding-sat-scores.pdf
+https://www.act.org/content/dam/act/unsecured/documents/MultipleChoiceStemComposite.pdf
+https://secure-media.collegeboard.org/sat/pdf/sat-subject-tests-percentile-ranks.pdf
+
+4. Data Sources: High Schools
+Scraping data for all high schools at once would be very inefficient.  Data about a high school should be scraped on-demand (i.e., after the high school is first mentioned in a student profile) and only once per high school.  A few experiments with the search function shows that the URL for pages for a particular high school can be constructed from known information.
+
+Niche High School Ranking. Rankings and other information about a high school's academic quality are available at https://www.niche.com/k12/rankings/. Sample URLs for a particular high school are https://www.niche.com/k12/ward-melville-senior-high-school-east-setauket-ny/ for general information and (by clicking on "More about ... academics" on that page) https://www.niche.com/k12/ward-melville-senior-high-school-east-setauket-ny/academics for more information about academics.
+
+A high school is known to the system if it appears in a student profile. Whenever a user needs to specify a high school, the user provides a substring of the name. If the substring does not uniquely identify a high school among those known to the system, the system displays all matches and allows the user to disambiguate. [2020-01-31: added this paragraph.]
+
+5. Data Sources: Student Profiles
+A student profile dataset is stored in a pair of csv files: a students file, and an applications file.  Each file has a header row containing field names, followed by data rows.  A field value may be a string containing a comma, in which case the value is enclosed in double quotes (").  A students file contains the fields: userid, password, residence_state, high_school_name, high_school_city, high_school_state, GPA, college_class, major_1, major_2, SAT_math, SAT_EBRW, ACT_English, ACT_math, ACT_reading, ACT_science, ACT_composite, SAT_literature, SAT_US_hist, SAT_world_hist, SAT_math_I, SAT_math_II, SAT_eco_bio, SAT_mol_bio, SAT_chemistry, SAT_physics, num_AP_passed.  password is the user's password in plaintext; storing plaintext passwords in these data files is acceptable, because these data files are intended only for test data, not production data. college_class is the expected year of college graduation.  major_1 and major_2 are prospective college majors.  num_AP_passed is the number of AP tests passed (i.e., score of 3 or higher). For simplicity, the system omits SAT foreign language subject tests and details of AP tests.  An applications file contains the fields: userid, college, status.  Each row indicates a college the student applied to, and the current status of the application.  Possible values of status are: pending, accepted, denied, deferred, wait-listed, withdrawn. [2020-02-26 added GPA]
+
+Fields in the student profile database include, but are not limited to, fields in student profile data files. Inessential personal information (first name, last name, address, email, financial situation) is omitted from profiles, because all information in profiles is public. Students can omit information they don't want to share; almost all information in the profile is optional. Note that a student's financial situation can be taken into account using the cost-of-attendance filter.
+
+6. Functionality for Students
+6.1 Create account.  This allows a new user to create an account by choosing a username and password.  This does not require administrator approval.
+
+6.2 View/edit profile.  A student can view and edit all information in his/her profile (except userid cannot be edited), e.g., to update the status of a college application. [2020-01-31: updated previous sentence] When a student enters an acceptance decision, the system checks for statistical consistency between that decision and other information in the student's profile. [2020-03-13 It makes sense to check this consistency when any relevant information in the student's profile is updated, but it is sufficient to check this only when acceptance decisions are updated.] If the acceptance decision is statistically unlikely based on other information in the student's profile, the system marks it as questionable and indicates this to the student. Questionable acceptance decisions are ignored by the system when computing all query results; for example, they are omitted from scatterplots. This provides some benefit even though all information in student profiles is self-reported, provided most students are honest. If a student submits fake GPA, fake test scores, and fake acceptance decisions that are, taken together, similar to accurate data in honest students' profiles, the fake data won't significantly skew query results.
+
+6.3 Search for colleges.  This displays a list of colleges satisfying the specified search criteria, a.k.a. filters.  The user can specify whether to use a strict or lax interpretation of filter conditions.  Strict means that filter conditions involving missing data are treated as false; lax, that they are treated as true.  Each filter does nothing in its default state; it limits the search results only if the user sets another value for it.  The list can be sorted in various ways, including by name, admission rate, cost of attendance, and ranking.  The following information is provided for each college, either directly in the list, or by selecting a college in the list to view additional information about it: institution type (public, private nonprofit, or private for-profit, from College Scorecard field CONTROL), admission rate, completion rate (from CollegeData.com field "Students graduating within 4 years"), cost of attendance, median completed student debt (from College Scorecard field GRAD_DEBT_MDN), ranking, and size. The student can modify and re-run the current search (you are free to display search results on the same or a different page than the search boxes, whichever makes this feature easier to implement). [2020-01-31: added previous sentence.]
+
+Supported filters include:
+
+admission rate: range for percentage of applicants admitted.  The system gets admission rate from College Scorecard field ADM_RATE.
+
+cost of attendance: upper bound on the cost of attendance.  For public state institutions, the in-state or out-of-state cost should be used as appropriate, based on the user's state of residence.  The system gets cost of attendance from CollegeData.com.
+
+location: a set of states or a region in which the college should be located.  A region is a shorthand for a set of states.  For simplicity, use the four regions defined by the U.S. Census Bureau: Northeast, Midwest, South, and West.
+
+majors: up to 2 majors that should be offered.  The system gets the set of undergraduate majors at a college from CollegeData.com.  CollegeData.com sometimes uses long names for majors,  e.g., "English Language and Literature, General", and "Mathematics, General".  The system should treat these as equivalent to common shorter names, e.g., "English" and "Mathematics".
+
+name: a substring of the college's name. Note: in this context, the substring can match multiple colleges; disambiguation is unnecessary.
+
+ranking: range for the college's ranking.
+
+size: range for number of undergraduate students.  The system gets that number from College Scorecard field UG if it is non-null otherwise from College Scorecard field UGDS.
+
+SAT Math, SAT EBRW, ACT Composite: range for average scores for enrolled freshmen.  The systems gets this information from CollegeData.com; if CollegeData.com doesn't report the average, and it does report the range of middle 50%, use the midpoint of that range.
+
+Although the original source of each data item is listed above, this function uses the copy of that data in the system's database.
+
+6.4 College recommender.  When viewing results of a college search, the student can ask the system to compute a recommendation score for each college in the search results, and sort the list by that score.  The recommendation is based on where students with similar profiles applied and possibly other information.  The student can select a college in the list to see the profiles of those similar students (to see how similar they are).  Recommendation scores are computed upon request, rather than by default, because the computation is relatively expensive.
+
+6.5 Find similar high schools.  To get the most meaningful results from the applications tracker, a user needs to identify high schools similar to his/her own.  This functions helps the user do that.  The user specifies a high school, and the system displays a list of the most similar high schools among those known to the system, with relevant information about them, sorted in descending order by similarity.  [2020-01-31: updated the previous sentence.] The similarity metric should be based on a variety of relevant information about the academic quality of the high school, including information from niche.com (possibly including but not limited to the school's ranking) and information from this system (for example, standardized test scores or acceptance decisions in profiles of students from the high school).
+
+6.6 Applications tracker (a.k.a. admissions tracker).  For a specified college, the system displays information about other students who applied to the specified college and meet specified filter conditions.  The user can specify whether to use strict or lax filtering. Supported filters include:
+
+college class: range of years of expected college graduation.
+
+high schools: a list of specified high schools. [2020-01-31: updated this item.]
+
+application status: a subset of the possible statuses.
+
+Information about matching student profiles may be displayed in two forms.
+6.6.1 List of matching student profiles, sorted by application status, with key information from each, and a statistical summary of the listed profiles, specifically, average GPA, average SAT Math, average SAT EBRW, and average ACT composite, reported for all matching users, and for matching users with application status = accepted.  The user can select a student profile to see all information in it.
+
+6.6.2 Scatterplot of application status of matching student profiles.  Each matching student is represented by a point on the scatterplot.  The color of the point indicates the student's application status; for example, green = accepted, red = denied, yellow = other.  The mean values on the horizontal and vertical axes are shown by a dashed vertical line and a dashed horizontal line, respectively. The vertical axis is GPA. The horizontal axis is based on standardized test scores.  The user can choose between SAT (Math+EBRW), ACT Composite, or weighted average of percentile scores for standardized tests (except AP tests).  The weights used in the weighted average are: 5% for each SAT subject test taken, and the remainder for SAT or ACT Composite (or split evenly between SAT and ACT Composite, if the student took both). [2020-03-13 There should also be a distinguished (different shape or color) point representing the student requesting the scatterplot. Since I forgot to mention this before, it is not required.]
+
+7. Functionality for Administrators
+All scrape and import functions overwrite old information in the system's database, if any.
+
+7.1 Scrape college rankings.  Scrape WSJ/THE 2020 rankings of all colleges in colleges.txt.
+
+7.2 Import College Scorecard data file.  Import information about all colleges in colleges.txt.
+
+7.3  Scrape CollegeData.com.  Scrape information about all colleges in colleges.txt.
+
+7.4 Delete all student profiles.
+
+7.5 Import student profile dataset.
+
+7.6 Review questionable acceptance decisions.  The system displays student profiles with questionable acceptance decisions. The administrator may validate some questionable acceptance decisions, so that they are no longer marked as questionable.
+
+8. Other Requirements
+8.1 Authentication.  All access to the system, [2020-01-30 added following phrase] except for student account creation, requires authentication with a password.  Passwords stored in the system database are salted and hashed.  It is sufficient to have one pre-defined administrator account, with a fixed username and password.  The system does not need to support creation of additional administrator accounts.
+
+8.2 Concurrency.  Synchronization is used to ensure correct behavior when multiple users access the system concurrently.
+
+8.3 Configuration.  It should be easy (e.g., by editing one line in one file) to change the hostname and path prefix of URLs for all data source websites, for example, to change from https://CollegeData.com/ to https://www.cs.stonybrook.edu/CollegeData/. I might create partial mirrors of some data source websites, to ensure availability and consistency of the content during demos.
+
+8.4 Ease of use. The system provides an easy-to-use, user-friendly web interface consistent with established UI design principles.  The system handles invalid inputs gracefully, provide helpful feedback to the user when appropriate, etc. 
+
+8.5 Multi-host operation.  The client and server can run on different hosts.
+
+8.6 Network security.  Network communication is secured using HTTPS or SSL.  If your server does not have a public-key certificate signed by a certification authority trusted by the web browser, the web browser will show a security warning.  The warning can be eliminated by creating a self-signed certificate, and installing the key in the browser, but that is optional.  Requiring the user to tell the browser to proceed despite the security warning is acceptable.
+
+8.7 Robustness. The system handles missing information gracefully.  For example, almost all information in a student profile is optional (students should omit information they don't want to share, since all information in the profile is public), and some information about colleges is missing on CollegeData.com (it's shown as "Not reported").  The system handles unreachable data sources gracefully, for example, if CollegeData.com is unreachable when scraping, or niche.com is unreachable when querying high school information. The system is robust to changes in the layout of scraped web pages, provided the part of direct interest is unchanged. The system can assume College Scoarecard data files contain valid data. The system thoroughly validates data entered by students: high schools, colleges, test scores, etc. [2020-01-31: added the previous 3 sentences.]
